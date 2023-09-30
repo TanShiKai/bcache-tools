@@ -167,6 +167,9 @@ const char * const cache_replacement_policies[] = {
 	NULL
 };
 
+/**
+ * main函数的主要执行函数
+*/
 static void write_sb(char *dev, unsigned block_size, unsigned bucket_size,
 		     bool writeback, bool discard, bool wipe_bcache,
 		     unsigned cache_replacement_policy,
@@ -276,6 +279,7 @@ static void write_sb(char *dev, unsigned block_size, unsigned bucket_size,
 
 	sb.csum = csum_set(&sb);
 
+	// fd对应的硬盘，先写4KB个0，再把sb的内容接着写到后面
 	/* Zero start of disk */
 	if (pwrite(fd, zeroes, SB_START, 0) != SB_START) {
 		perror("write error\n");
@@ -291,6 +295,9 @@ static void write_sb(char *dev, unsigned block_size, unsigned bucket_size,
 	close(fd);
 }
 
+/*
+ * 设备的一个扇区的大小是多少个512B
+*/
 static unsigned get_blocksize(const char *path)
 {
 	struct stat statbuf;
@@ -367,9 +374,13 @@ int main(int argc, char **argv)
 		{ NULL,			0, NULL,	0 },
 	};
 
+	printf("make-bcache by tansk!\n");
+	for (i = 0; i < argc; i++)	printf("argv = %s\n", argv[i]);
+
 	while ((c = getopt_long(argc, argv,
 				"-hCBUo:w:b:",
-				opts, NULL)) != -1)
+				opts, NULL)) != -1) {
+		printf("c = %d, optarg = %s\n", c, optarg);
 		switch (c) {
 		case 'C':
 			bdev = 0;
@@ -424,6 +435,9 @@ int main(int argc, char **argv)
 				cache_devices[ncache_devices++] = optarg;
 			break;
 		}
+	}
+
+	printf("%u, %u\n", ncache_devices, nbacking_devices);
 
 	if (!ncache_devices && !nbacking_devices) {
 		fprintf(stderr, "Please supply a device\n");
@@ -445,6 +459,7 @@ int main(int argc, char **argv)
 					 get_blocksize(backing_devices[i]));
 	}
 
+	// printf("%u, %u, %d, %d, %d, %u, %lu, %s\n", block_size, bucket_size, writeback, discard, wipe_bcache, cache_replacement_policy, data_offset, set_uuid);
 	for (i = 0; i < ncache_devices; i++)
 		write_sb(cache_devices[i], block_size, bucket_size,
 			 writeback, discard, wipe_bcache,

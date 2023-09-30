@@ -40,6 +40,10 @@ static const char bcache_magic[] = {
 #define BDEV_DATA_START_DEFAULT	16	/* sectors */
 #define SB_START		(SB_SECTOR * 512)
 
+/**
+ * 和内核源码/drivers/md/bcache/bcache_ondisk.h的cache_sb_disk基本一致
+ * 大概占100个Byte
+*/
 struct cache_sb {
 	uint64_t		csum;
 	uint64_t		offset;	/* sector where this sb was written */
